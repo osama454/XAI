@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Green Arrow Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <div id="info">Kills: 0 | Deaths: 0</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Sky color background
+    scene.background = new THREE.Color(0x87CEEB);
+
+    // Ground
+    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+    const groundMaterial = new THREE.MeshBasicMaterial({color: 0x909000});
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Player
+    const playerGeometry = new THREE.BoxGeometry(1, 1.5, 1);
+    const playerMaterial = new THREE.MeshBasicMaterial({color: 0x009000});
+    const player = new THREE.Mesh(playerGeometry, playerMaterial);
+    player.position.y = 0.75; // Half of height to position correctly on ground
+    scene.add(player);
+
+    // Enemy
+    const enemyGeometry = new THREE.BoxGeometry(1, 1.5, 1);
+    const enemyMaterial = new THREE.MeshBasicMaterial({color: 0x900000});
+    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+    enemy.position.set(10, 0.75, 10);
+    scene.add(enemy);
+
+    // Camera setup
+    camera.position.set(0, player.position.y + 1, 2);
+    let cameraOffset = new THREE.Vector3(0, 1, 2);
+
+    // Controls
+    const keys = { w: false, a: false, s: false, d: false, space: false, shift: false };
+    document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+    document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+    document.addEventListener('mousemove', (e) => {
+        const movementX = e.movementX || 0;
+        camera.rotation.y -= movementX * 0.002;
+    });
+
+    // Shooting
+    const cursorGeometry = new THREE.RingGeometry(0.01, 0.02, 32);
+    const cursorMaterial = new THREE.MeshBasicMaterial({color: 0x900000});
+    const cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
+    cursor.position.z = -2;
+    camera.add(cursor);
+
+    const arrows = [];
+    document.addEventListener('mousedown', () => {
+        const arrow = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 32), new THREE.MeshBasicMaterial({color: 0x009000}));
+        arrow.position.copy(player.position).add(new THREE.Vector3(0, 1, 0));
+        arrow.rotation.copy(camera.rotation);
+        scene.add(arrow);
+        arrows.push({mesh: arrow, velocity: new THREE.Vector3(0, 0, -0.3).applyQuaternion(camera.quaternion)});
+    });
+
+    // Enemy shooting logic (simplified for this example)
+    setInterval(() => {
+        if (Math.random() < 0.1) { // Simplified firing rate
+            const direction = player.position.clone().sub(enemy.position).normalize();
+            const arrowSpeed = 0.3;
+            const gravity = 0.001;
+            const distance = player.position.distanceTo(enemy.position);
+            const heightDiff = player.position.y - enemy.position.y;
+            
+            // This is a very simplified version of the calculation:
+            const v0 = arrowSpeed;
+            const t = distance / v0;
+            const vy = (heightDiff + 0.5 * gravity * t * t) / t;
+            const vx = distance / t;
+
+            const enemyArrow = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 32), new THREE.MeshBasicMaterial({color: 0x900000}));
+            enemyArrow.position.copy(enemy.position).add(new THREE.Vector3(0, 1, 0));
+            scene.add(enemyArrow);
+            arrows.push({
+                mesh: enemyArrow,
+                velocity: new THREE.Vector3(direction.x * vx, vy, direction.z * vx)
+            });
+        }
+    }, 1000);
+
+    // Game logic
+    let kills = 0, deaths = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        // Player movement
+        const speed = keys.shift ? 0.05 : 0.1;
+        if (keys.w) player.translateZ(-speed);
+        if (keys.s) player.translateZ(speed);
+        if (keys.a) player.translateX(-speed);
+        if (keys.d) player.translateX(speed);
+        if (keys.space && player.position.y < 5) player.position.y += 0.15;
+        if (!keys.space) player.position.y -= 0.01; // Gravity
+        player.position.y = Math.max(player.position.y, keys.shift ? 0.375 : 0.75); // Sitting or standing height
+
+        // Update camera position
+        camera.position.copy(player.position).add(cameraOffset);
+        camera.lookAt(player.position);
+
+        // Arrow movement and collision
+        arrows.forEach((arrow, index) => {
+            arrow.mesh.position.add(arrow.velocity);
+            arrow.velocity.y -= 0.001; // Arrow gravity
+            const direction = arrow.velocity.clone().normalize();
+            arrow.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+            
+            if(arrow.mesh.position.y < 0) {
+                scene.remove(arrow.mesh);
+                arrows.splice(index, 1);
+                return;
+            }
+
+            // Check collision with player or enemy
+            if(arrow.mesh.position.distanceTo(player.position) < 1) {
+                teleport(player);
+                deaths++;
+            } else if(arrow.mesh.position.distanceTo(enemy.position) < 1) {
+                teleport(enemy);
+                kills++;
+            }
+            if(kills || deaths) {
+                document.getElementById('info').innerText = `Kills: ${kills} | Deaths: ${deaths}`;
+                scene.remove(arrow.mesh);
+                arrows.splice(index, 1);
+            }
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    function teleport(character) {
+        character.position.x = Math.random() * 100 - 50;
+        character.position.z = Math.random() * 100 - 50;
+        character.position.y = 0.75; // Reset to ground level
+    }
+
+    animate();
+    </script>
+</body>
+</html>

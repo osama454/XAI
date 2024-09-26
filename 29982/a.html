@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Green Arrow Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        Kills: <span id="kills">0</span> | Deaths: <span id="deaths">0</span>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Ground
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(1000, 1000),
+            new THREE.MeshBasicMaterial({color: 0x909000})
+        );
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+
+        // Sky color
+        scene.background = new THREE.Color(0x87CEEB);
+
+        // Player
+        const player = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1.5, 1),
+            new THREE.MeshBasicMaterial({color: 0x009000})
+        );
+        player.position.set(0, 0.75, 0); // Start slightly above ground
+        scene.add(player);
+
+        // Enemy
+        const enemy = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1.5, 1),
+            new THREE.MeshBasicMaterial({color: 0x900000})
+        );
+        scene.add(enemy);
+
+        // Game logic
+        let arrows = [], kills = 0, deaths = 0;
+        const gravity = 0.01;
+
+        // Controls
+        const keys = {};
+        document.addEventListener('keydown', (e) => keys[e.code] = true);
+        document.addEventListener('keyup', (e) => keys[e.code] = false);
+        renderer.domElement.addEventListener('click', shootArrow);
+
+        // Camera follow player
+        camera.position.set(0, 1.75, 2); // Position above and behind player's head
+
+        // Enemy AI shoot
+        setInterval(() => {
+            if (enemy.position.distanceTo(player.position) > 1) {
+                const angle = calculateTrajectory(enemy.position, player.position, 0.3, 0.001);
+                const dir = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
+                shoot(enemy.position, dir, angle, true);
+            }
+        }, 1000);
+
+        function calculateTrajectory(pos1, pos2, speed, gravity) {
+            const dist = pos1.distanceTo(pos2);
+            const yDiff = pos2.y - pos1.y;
+            const v = speed;
+            const g = gravity;
+            const root = Math.sqrt(v**4 - g * (g * dist**2 + 2 * yDiff * v**2));
+            const angle1 = Math.atan((v**2 + root) / (g * dist));
+            const angle2 = Math.atan((v**2 - root) / (g * dist));
+            return Math.max(angle1, angle2); // Return the angle that points upwards
+        }
+
+        function shoot(from, direction, angle, isEnemy = false) {
+            const arrow = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.05, 0.05, 0.5),
+                new THREE.MeshBasicMaterial({color: isEnemy ? 0x900000 : 0x009000})
+            );
+            arrow.rotation.setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction));
+            arrow.position.copy(from);
+            arrow.userData.velocity = direction.multiplyScalar(0.3).applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+            scene.add(arrow);
+            arrows.push(arrow);
+        }
+
+        function shootArrow() {
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            shoot(player.position, dir, 0);
+        }
+
+        function update() {
+            // Player movement
+            const speed = 0.1;
+            if(keys['KeyW']) player.position.z -= speed;
+            if(keys['KeyS']) player.position.z += speed;
+            if(keys['KeyA']) player.position.x -= speed;
+            if(keys['KeyD']) player.position.x += speed;
+            if(keys['Space']) player.position.y += 0.15;
+            if(keys['ShiftLeft']) player.scale.y = 0.5; // Sitting
+            else player.scale.y = 1; // Standing
+
+            // Gravity
+            if(player.position.y > 0.75) player.position.y -= gravity;
+
+            // Camera follow
+            camera.position.x = player.position.x;
+            camera.position.y = player.position.y + 0.75; // Adjust for player height
+            camera.position.z = player.position.z + 2;
+
+            // Mouse look (simplified)
+            // In a real scenario, you would handle this with proper mouse capture and delta movement
+
+            // Update arrows
+            arrows.forEach(arrow => {
+                arrow.position.add(arrow.userData.velocity);
+                arrow.userData.velocity.y -= 0.001; // Arrow gravity
+                arrow.lookAt(arrow.position.clone().add(arrow.userData.velocity));
+
+                // Collision check
+                if(arrow.position.distanceTo(player.position) < 1) {
+                    scene.remove(arrow);
+                    teleportAndUpdateScore(true); // Player hit
+                } else if(arrow.position.distanceTo(enemy.position) < 1) {
+                    scene.remove(arrow);
+                    teleportAndUpdateScore(false); // Enemy hit
+                }
+            });
+            arrows = arrows.filter(arrow => arrow.position.y > 0); // Remove arrows below ground
+
+            requestAnimationFrame(update);
+            renderer.render(scene, camera);
+        }
+
+        function teleportAndUpdateScore(isPlayerHit) {
+            if(isPlayerHit) {
+                deaths++;
+                player.position.set(Math.random() * 50 - 25, 1, Math.random() * 50 - 25);
+            } else {
+                kills++;
+                enemy.position.set(Math.random() * 50 - 25, 1, Math.random() * 50 - 25);
+            }
+            document.getElementById('kills').textContent = kills;
+            document.getElementById('deaths').textContent = deaths;
+        }
+
+        update();
+    </script>
+</body>
+</html>
