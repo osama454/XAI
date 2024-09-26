@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Weather Widget</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    background: url('path/to/your/background-image.jpg') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.weather-widget {
+    width: 90%;
+    max-width: 1200px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+#map {
+    height: 400px;
+    width: 100%;
+    transition: opacity 0.5s;
+}
+
+.weather-details {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+button {
+    margin: 10px auto;
+    display: block;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+</style>
+</head>
+<body>
+
+<div class="weather-widget">
+    <div id="map"></div>
+    <div class="weather-details">
+        <h2 id="city-name">Select a city on the map</h2>
+        <p>Temperature: <span id="temp"></span></p>
+        <p>Conditions: <span id="conditions"></span></p>
+        <button onclick="toggleView()">Show Map</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+// Assuming you have an OpenWeatherMap API key
+const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+let map;
+let currentCity;
+
+function initMap() {
+    map = L.map('map').setView([51.505, -0.09], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Example markers - replace with actual city coordinates
+    L.marker([51.5, -0.09]).addTo(map).on('click', () => fetchWeather('London'));
+    L.marker([48.8566, 2.3522]).addTo(map).on('click', () => fetchWeather('Paris'));
+    // Add more cities as needed
+}
+
+function fetchWeather(city) {
+    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`)
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('city-name').textContent = data.name;
+        document.getElementById('temp').textContent = `${data.main.temp}°C`;
+        document.getElementById('conditions').textContent = data.weather[0].description;
+        currentCity = city;
+        toggleView();
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function toggleView() {
+    const mapDiv = document.getElementById('map');
+    const weatherDiv = document.querySelector('.weather-details');
+    if (mapDiv.style.display === 'none') {
+        mapDiv.style.display = 'block';
+        weatherDiv.style.display = 'none';
+    } else {
+        mapDiv.style.display = 'none';
+        weatherDiv.style.display = 'block';
+    }
+}
+
+initMap();
+</script>
+
+</body>
+</html>

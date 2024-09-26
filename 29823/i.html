@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Widget</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: url('data:image/jpeg;base64,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') no-repeat center center fixed;
+            background-size: cover;
+            color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            width: 80%;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        #instruction {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            margin: 20px auto;
+            border-radius: 10px;
+            opacity: 1;
+            transition: opacity 0.5s ease, height 0.5s ease;
+        }
+
+        #map.hidden {
+            opacity: 0;
+            height: 0;
+        }
+
+        #weather-info {
+            display: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            width: 60%;
+            margin-top: 20px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            margin: 0 auto;
+        }
+
+        #weather-info.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #weather-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        #weather-info p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .toggle-button {
+            display: none;
+        }
+
+        .toggle-button.show {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Widget</h1>
+        <p id="instruction">Click on a city on the map below to view its weather details.</p>
+        
+        <div id="map"></div>
+
+        <button id="toggle-map-btn" class="toggle-button">Show Map</button>
+
+        <div id="weather-info">
+            <h2>Weather Details</h2>
+            <p><strong>Location:</strong> <span id="location"></span></p>
+            <p><strong>Temperature:</strong> <span id="temperature"></span>°C</p>
+            <p><strong>Wind Speed:</strong> <span id="wind-speed"></span> m/s</p>
+            <p><strong>Wind Direction:</strong> <span id="wind-direction"></span>°</p>
+            <p><strong>Weather Condition:</strong> <span id="weather-code"></span></p>
+            <p><strong>Time:</strong> <span id="time"></span></p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map using Leaflet
+        let map, isMapVisible = true;
+
+        function initMap() {
+            map = L.map('map').setView([51.505, -0.09], 2); // Default view
+
+            // Add OpenStreetMap layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+            }).addTo(map);
+
+            // Click event on the map to select a city
+            map.on('click', function(e) {
+                var lat = e.latlng.lat;
+                var lon = e.latlng.lng;
+                getWeather(lat, lon);
+
+                // Hide the map and show weather info
+                toggleMapAndWeather();
+            });
+        }
+
+        function toggleMapAndWeather() {
+            const mapElement = document.getElementById('map');
+            const weatherInfo = document.getElementById('weather-info');
+            const toggleMapBtn = document.getElementById('toggle-map-btn');
+            const instruction = document.getElementById('instruction');
+
+            if (isMapVisible) {
+                // Hide the map, show weather
+                mapElement.classList.add('hidden');
+                weatherInfo.classList.add('show');
+                toggleMapBtn.classList.add('show');
+                instruction.style.display = 'none';
+            } else {
+                // Show the map, hide weather
+                mapElement.classList.remove('hidden');
+                weatherInfo.classList.remove('show');
+                toggleMapBtn.classList.remove('show');
+                instruction.style.display = 'block';
+            }
+
+            isMapVisible = !isMapVisible;
+        }
+
+        // Show map with animation when the button is clicked
+        document.getElementById('toggle-map-btn').addEventListener('click', toggleMapAndWeather);
+
+        // Fetch weather data from Open-Meteo API
+        function getWeather(lat, lon) {
+            const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const weatherData = data.current_weather;
+                    // Populate all available weather details
+                    document.getElementById('location').innerText = `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
+                    document.getElementById('temperature').innerText = weatherData.temperature;
+                    document.getElementById('wind-speed').innerText = weatherData.windspeed;
+                    document.getElementById('wind-direction').innerText = weatherData.winddirection;
+                    document.getElementById('weather-code').innerText = getWeatherDescription(weatherData.weathercode);
+                    document.getElementById('time').innerText = new Date(weatherData.time).toLocaleString();
+                })
+                .catch(error => console.error('Error fetching weather data:', error));
+        }
+
+        // Map weather codes to human-readable descriptions
+        function getWeatherDescription(code) {
+            const descriptions = {
+                0: 'Clear sky',
+                1: 'Mainly clear',
+                2: 'Partly cloudy',
+                3: 'Overcast',
+                45: 'Fog',
+                48: 'Depositing rime fog',
+                51: 'Light drizzle',
+                53: 'Moderate drizzle',
+                55: 'Dense drizzle',
+                61: 'Slight rain',
+                63: 'Moderate rain',
+                65: 'Heavy rain',
+                80: 'Slight rain showers',
+                81: 'Moderate rain showers',
+                82: 'Violent rain showers',
+                95: 'Thunderstorm',
+                96: 'Thunderstorm with slight hail',
+                99: 'Thunderstorm with heavy hail'
+            };
+            return descriptions[code] || 'Unknown';
+        }
+
+        // Initialize map on page load
+        window.onload = initMap;
+    </script>
+</body>
+</html>

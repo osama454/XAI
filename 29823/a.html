@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Weather Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: url('https://source.unsplash.com/1600x900/?nature,weather') no-repeat center center fixed;
+            background-size: cover;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+            transition: width 0.5s;
+        }
+        #weatherInfo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            transition: opacity 0.5s;
+        }
+        #toggleView {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        .instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="weatherInfo">
+    <h2 id="cityName"></h2>
+    <p>Temperature: <span id="temperature"></span>°C</p>
+    <p>Weather: <span id="weatherDesc"></span></p>
+    <p>Wind: <span id="windSpeed"></span> m/s</p>
+</div>
+<button id="toggleView" style="display: none;" onclick="toggleMapWeather()">Show Map</button>
+<div class="instructions">Click on a city to see weather details</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    // Initialize the map
+    let map = L.map('map').setView([51.505, -0.09], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Function to toggle between map and weather info
+    function toggleMapWeather() {
+        document.getElementById('map').style.display = document.getElementById('map').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('weatherInfo').style.display = document.getElementById('weatherInfo').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('toggleView').style.display = document.getElementById('weatherInfo').style.display === 'block' ? 'inline' : 'none';
+    }
+
+    // Mock function for weather data (replace with actual API call)
+    function getWeatherData(lat, lon) {
+        // Here you would typically call an API like OpenWeatherMap
+        // For this example, we'll simulate data
+        return {
+            name: 'Mock City',
+            main: { temp: 22 },
+            weather: [{ description: 'sunny' }],
+            wind: { speed: 3.6 }
+        };
+    }
+
+    // Adding click event to the map
+    map.on('click', function(e) {
+        let weatherData = getWeatherData(e.latlng.lat, e.latlng.lng);
+        document.getElementById('cityName').innerText = weatherData.name;
+        document.getElementById('temperature').innerText = weatherData.main.temp;
+        document.getElementById('weatherDesc').innerText = weatherData.weather[0].description;
+        document.getElementById('windSpeed').innerText = weatherData.wind.speed;
+        toggleMapWeather();
+    });
+</script>
+
+</body>
+</html>
