@@ -198,11 +198,7 @@
       bullet.applyQuaternion(shooter.head.getWorldQuaternion(new THREE.Quaternion(), 'YXZ'))
       bullet.name = 'bullet'
       bullet.speed = new THREE.Vector3(0, 0, -1).applyQuaternion(bullet.quaternion).multiplyScalar(bulletSpeed)
-      if (shooter == player) { // Fix the angle difference between the camera and the player
-        let intersects = new THREE.Raycaster(camera.position, new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion), 0, 200).intersectObjects(scene.children, true)
-        intersects = intersects.filter((e) => e.object.name != name)
-        if (intersects.length) bullet.speed = intersects[0].point.sub(bullet.position).normalize().multiplyScalar(bulletSpeed)
-      }
+
       // bullet.translateZ(-1)
       const interval = setInterval(() => {
         // console.log(bullet.direction, bullet.position.distanceTo(bullet.from));
