@@ -1,4 +1,7 @@
 {
   "installDependencies": false,
-  "startCommand": "npm start"
+  "startCommand": "npm start",
+  "env": {
+    "NODE_ENV": "development"
+  }
 }
