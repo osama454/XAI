@@ -1,15 +1,255 @@
-<script>
-    fetch("/").then(d => d.text()).then(htmlString => {
-        // Regular expression to match href attributes
-        const hrefRegex = /<a[^>]+href="([^"]+)"/g;
+<!DOCTYPE html>
+<html lang="en">
 
-        let match;
-        while ((match = hrefRegex.exec(htmlString)) !== null) {
-            const hrefValue = match[1];  // Full href value
-            if (hrefValue.includes("\\")) {
-                const textAfterBackslash = hrefValue.split("\\")[1];
-                console.log(textAfterBackslash);  // Output the text after the backslash
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 30px;
+            color: #343a40;
+        }
+
+        /* Filter Section Styling */
+        .filter {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        label {
+            font-size: 18px;
+            color: #555;
+            margin-right: 10px;
+        }
+
+        #folderSelect {
+            padding: 12px 20px;
+            background-color: #fff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #007bff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #folderSelect:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        /* Project Section Styling */
+        #projectsContainer {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .project {
+            background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .project h2 {
+            font-size: 22px;
+            margin: 0;
+            color: #343a40;
+            text-align: center;
+        }
+
+        .project-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        /* Button Styles */
+        a {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 12px rgba(0, 86, 179, 0.5);
+        }
+
+        a:active {
+            background-color: #003f88;
+            transform: scale(0.98);
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .project-buttons a {
+                margin: 10px 5px;
+            }
+
+            .project h2 {
+                font-size: 18px;
+            }
+
+            #folderSelect {
+                font-size: 14px;
             }
         }
-    })
-</script>
+    </style>
+</head>
+
+<body>
+    <h1>Projects</h1>
+
+    <div class="filter">
+        <label for="folderSelect">Select a folder:</label>
+        <select id="folderSelect" onchange="loadSelectedFolder()"></select>
+    </div>
+
+    <div id="projectsContainer"></div>
+
+    <script>
+        // Function to fetch the files in a given project
+        async function loadFiles(path) {
+            const fileNames = ['a.html', 'b.html', 'i.html', 'video.mp4'];
+            const fileData = {};
+
+            for (let file of fileNames) {
+                try {
+                    const response = await fetch(`${path}${file}`);
+                    if (response.ok) {
+                        fileData[file] = response.url;
+                    }
+                } catch (error) {
+                    console.log("error");
+                }
+            }
+            return fileData;
+        }
+
+        // Function to load folders from a given path
+        async function loadFolders(path) {
+            const response = await fetch(path+'?list=true');
+            const htmlString = await response.text();
+
+            // Regular expression to match href attributes with folder names
+            const hrefRegex = /<a[^>]+href="\\([^"]+\/)"/g;
+            let folders = [];
+            let match;
+
+            // Extract folder names
+            while ((match = hrefRegex.exec(htmlString)) !== null) {
+                const folderName = match[1];
+                if (folderName == '.git/') continue
+                folders.push(folderName);
+            }
+
+            return folders;
+        }
+
+        // Function to populate the dropdown with folder names
+        function populateDropdown(folders) {
+            const folderSelect = document.getElementById('folderSelect');
+            folderSelect.innerHTML = ''; // Clear current options
+
+            folders.forEach((folder) => {
+                const option = document.createElement('option');
+                option.value = folder;
+                option.text = folder;
+                folderSelect.add(option);
+            });
+
+            // Set the default selection to the last folder
+            folderSelect.selectedIndex = folders.length - 1;
+        }
+
+        // Load and display the projects inside the selected folder
+        async function loadSelectedFolder() {
+            const folderSelect = document.getElementById('folderSelect');
+            const selectedFolder = folderSelect.value;
+            document.getElementById('projectsContainer').innerHTML = ''; // Clear current projects
+            await displayProjects(selectedFolder);
+        }
+
+        // Display projects inside a folder and their respective files
+        async function displayProjects(folder) {
+            const projectsContainer = document.getElementById('projectsContainer');
+            const subFolders = await loadFolders(`/${folder}`);
+
+            for (const project of subFolders) {
+                const projectData = await loadFiles(`${project}`);
+                renderProject(project, projectData, folder);
+            }
+        }
+
+        // Render a project with its files as `a` components
+        function renderProject(project, projectData, folder) {
+            const projectDiv = document.createElement('div');
+            projectDiv.className = 'project';
+            projectDiv.innerHTML = `<h2>${project.split('\\')[1]}</h2>`;
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'project-buttons';
+
+            // Links for a.html, b.html, i.html
+            ['a.html', 'b.html', 'i.html'].forEach(file => {
+                if (projectData[file]) {
+                    const fileLink = document.createElement('a');
+                    fileLink.href = projectData[file];
+                    fileLink.innerText = `Load ${file.toUpperCase()}`;
+                    buttonsDiv.appendChild(fileLink);
+                }
+            });
+
+            // Video link if it exists
+            if (projectData['video.mp4']) {
+                const videoLink = document.createElement('a');
+                videoLink.href = projectData['video.mp4'];
+                videoLink.innerText = 'Watch Video';
+                buttonsDiv.appendChild(videoLink);
+            }
+
+            projectDiv.appendChild(buttonsDiv);
+            document.getElementById('projectsContainer').appendChild(projectDiv);
+        }
+
+        // Initial function to load the root folders and set up the dropdown
+        async function init() {
+            const folders = await loadFolders("/");
+            populateDropdown(folders);
+            loadSelectedFolder(); // Load the last folder by default
+        }
+
+        init(); // Start the app
+    </script>
+</body>
+
+</html>
