@@ -143,13 +143,9 @@
             const fileData = {};
 
             for (let file of fileNames) {
-                try {
-                    const response = await fetch(`${path}${file}`);
-                    if (response.ok) {
-                        fileData[file] = response.url;
-                    }
-                } catch (error) {
-                    console.log("error");
+                const response = await fetch(`${path}${file}`);
+                if (response.ok) {
+                    fileData[file] = response.url;
                 }
             }
             return fileData;
@@ -157,18 +153,18 @@
 
         // Function to load folders from a given path
         async function loadFolders(path) {
-            const response = await fetch(path+'?list=true');
+            const response = await fetch(path + '?list=true');
             const htmlString = await response.text();
 
             // Regular expression to match href attributes with folder names
-            const hrefRegex = /<a[^>]+href="\\([^"]+\/)"/g;
+            const hrefRegex = /<a[^>]+href="\\?([^"]+\/)"/g;
             let folders = [];
             let match;
 
             // Extract folder names
             while ((match = hrefRegex.exec(htmlString)) !== null) {
                 const folderName = match[1];
-                if (folderName == '.git/') continue
+                if (folderName.startsWith('.')) continue
                 folders.push(folderName);
             }
 
@@ -219,12 +215,13 @@
             const buttonsDiv = document.createElement('div');
             buttonsDiv.className = 'project-buttons';
 
+            const map = { 'a.html': "Response A", 'b.html': "Response B", 'i.html': "Ideal Response" };
             // Links for a.html, b.html, i.html
             ['a.html', 'b.html', 'i.html'].forEach(file => {
                 if (projectData[file]) {
                     const fileLink = document.createElement('a');
                     fileLink.href = projectData[file];
-                    fileLink.innerText = `Load ${file.toUpperCase()}`;
+                    fileLink.innerText = map[file];
                     buttonsDiv.appendChild(fileLink);
                 }
             });
