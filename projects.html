@@ -1,0 +1,15 @@
+<script>
+    fetch("/").then(d => d.text()).then(htmlString => {
+        // Regular expression to match href attributes
+        const hrefRegex = /<a[^>]+href="([^"]+)"/g;
+
+        let match;
+        while ((match = hrefRegex.exec(htmlString)) !== null) {
+            const hrefValue = match[1];  // Full href value
+            if (hrefValue.includes("\\")) {
+                const textAfterBackslash = hrefValue.split("\\")[1];
+                console.log(textAfterBackslash);  // Output the text after the backslash
+            }
+        }
+    })
+</script>
