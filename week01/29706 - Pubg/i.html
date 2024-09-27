@@ -303,8 +303,8 @@
 
   document.addEventListener("mousemove", (e) => {
     if (isRotateStart) {
-      player.rotation.y -= e.movementX * 0.004;
-      head.rotation.x -= e.movementY * 0.004;
+      player.rotation.y -= e.movementX * 0.002;
+      head.rotation.x -= e.movementY * 0.002;
 
       head.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, head.rotation.x));
     }
