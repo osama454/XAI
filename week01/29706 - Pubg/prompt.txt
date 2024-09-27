@@ -1,0 +1,21 @@
+I want to create a web game for mobile browsers similar to Pubg Mobile.
+
+The game controls are a circular area to move the player when touches it and moves on the left bottom area.
+
+Two circular buttons above it that rotate the player around the Z axis when being touched. It should be toggled between active or inactive after each touch. If the player is rotated right and press the rotate left button, he should be rotated left. The angle of rotation around the Z axis is 45 degrees.
+
+Above these two buttons, add a circular button for shooting. The player should be able to spray while touching the button, not a single shoot at each touch.
+
+On the right hand side, add two circular buttons for sit and jump. The sit button should toggle the state of the player after each touch. The player doesn't need to hold this button to keep sitting.
+
+Implement the functionality of these buttons correctly.
+
+The player should be a simple cylinder as the body and a sphere as the head.
+
+Add an enemy to the game that the player will fight. The enemy should shoot a bullet every 2 seconds. The bullet speed should be 2 for each frame.
+
+The frame rate should be with a delay between frames equal to approximately 16ms.
+
+When the bullet hits the player, the deaths should increment by 1, and when the bullet hits the enemy, the kills should increment by 1. When the bullet hits the player or the enemy, the player or the enemy should be spawned at a random point.
+
+Add a cursor to the game to help the player aim.
