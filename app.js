@@ -18,7 +18,6 @@ app.get('/list-folders', (req, res) => {
         if (err) {
             return res.status(500).send('Unable to scan directory: ' + err);
         }
-        console.log(files);
         const folders = files
             .filter(file => file.isDirectory())
             .map(folder => folder.name).filter(folder => !['.git', 'node_modules'].includes(folder))
