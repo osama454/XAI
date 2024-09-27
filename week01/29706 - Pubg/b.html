@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Shooter Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #gameCanvas { width: 100%; height: 100%; }
+        .controls { position: absolute; bottom: 10px; }
+        .left-controls { left: 10px; }
+        .right-controls { right: 10px; }
+        .button { 
+            width: 50px; height: 50px; 
+            border-radius: 50%; 
+            background-color: rgba(200, 200, 200, 0.5); 
+            position: absolute; 
+            touch-action: none;
+        }
+        #move, #rotate-left, #rotate-right, #shoot, #sit, #jump { 
+            display: flex; justify-content: center; align-items: center; 
+        }
+    </style>
+</head>
+<body>
+    <div id="gameCanvas"></div>
+    <div class="controls left-controls">
+        <div id="move" class="button" style="bottom: 0; left: 0;"></div>
+        <div id="rotate-left" class="button" style="bottom: 70px; left: 0;"></div>
+        <div id="rotate-right" class="button" style="bottom: 140px; left: 0;"></div>
+        <div id="shoot" class="button" style="bottom: 210px; left: 0;"></div>
+    </div>
+    <div class="controls right-controls">
+        <div id="sit" class="button" style="bottom: 0; right: 0;"></div>
+        <div id="jump" class="button" style="bottom: 70px; right: 0;"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+    // Game setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('gameCanvas').appendChild(renderer.domElement);
+
+    // Player and Enemy
+    const playerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 32);
+    const playerHead = new THREE.SphereGeometry(0.5, 32, 32);
+    const playerMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00});
+    const player = new THREE.Group();
+    player.add(new THREE.Mesh(playerGeometry, playerMaterial));
+    player.add(new THREE.Mesh(playerHead, playerMaterial));
+    playerHead.position.y = 1.5;
+    scene.add(player);
+
+    const enemy = new THREE.Mesh(playerGeometry, new THREE.MeshBasicMaterial({color: 0xff0000}));
+    enemy.position.set(5, 0, 5);
+    scene.add(enemy);
+
+    // Game logic
+    let isShooting = false;
+    let angle = 0;
+    let isSitting = false;
+    const clock = new THREE.Clock();
+    const bullets = [];
+
+    function spawnRandom(object) {
+        object.position.x = Math.random() * 10 - 5;
+        object.position.z = Math.random() * 10 - 5;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+        
+        // Player movement and rotation
+        // (This would involve handling touch/mouse events not implemented here for brevity)
+        
+        // Shooting logic
+        if(isShooting) {
+            const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff}));
+            bullet.position.copy(player.position);
+            bullet.position.y += 1; // adjust for player's head
+            bullet.velocity = new THREE.Vector3(0, 0, -2).applyQuaternion(player.quaternion);
+            bullets.push(bullet);
+            scene.add(bullet);
+        }
+
+        // Update bullets
+        bullets.forEach(b => {
+            b.position.add(b.velocity);
+            // Simple collision detection
+            if(b.position.distanceTo(enemy.position) < 0.5) {
+                spawnRandom(enemy);
+            }
+            // Remove bullet if out of bounds or collision
+            if(b.position.y < 0 || b.position.distanceTo(player.position) > 20) scene.remove(b);
+        });
+
+        renderer.render(scene, camera);
+    }
+
+    // Event listeners for controls would go here, handling touch and mouse events
+    // Example:
+    document.getElementById('shoot').addEventListener('touchstart', () => isShooting = true);
+    document.getElementById('shoot').addEventListener('touchend', () => isShooting = false);
+
+    animate();
+    spawnRandom(player);
+    spawnRandom(enemy);
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Shooter Game</title>
+<style>
+    body { margin: 0; overflow: hidden; background-color: #f0f0f0; }
+    #gameCanvas { display: block; }
+    .controls { position: absolute; bottom: 10px; width: 100%; display: flex; justify-content: space-between; }
+    .control-btn { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.5); border: 2px solid #000; touch-action: none; }
+    .left-controls, .right-controls { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="controls">
+    <div class="left-controls">
+        <div id="move" class="control-btn"></div>
+        <div id="rotateLeft" class="control-btn"></div>
+        <div id="rotateRight" class="control-btn"></div>
+        <div id="shoot" class="control-btn"></div>
+    </div>
+    <div class="right-controls">
+        <div id="sit" class="control-btn"></div>
+        <div id="jump" class="control-btn"></div>
+    </div>
+</div>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = {x: canvas.width / 2, y: canvas.height / 2, radius: 20, angle: 0, sitting: false, deaths: 0, kills: 0};
+let enemy = {x: 100, y: 100, radius: 20};
+let bullets = [];
+let isShooting = false;
+let moveDirection = {x: 0, y: 0};
+let rotateLeft = false;
+let rotateRight = false;
+
+// Control touch/mouse events
+let touchMove = {active: false, startX: 0, startY: 0};
+
+document.getElementById('move').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    touchMove.active = true;
+    touchMove.startX = e.touches[0].clientX;
+    touchMove.startY = e.touches[0].clientY;
+});
+
+document.getElementById('move').addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (touchMove.active) {
+        moveDirection.x = e.touches[0].clientX - touchMove.startX;
+        moveDirection.y = e.touches[0].clientY - touchMove.startY;
+        touchMove.startX = e.touches[0].clientX;
+        touchMove.startY = e.touches[0].clientY;
+    }
+});
+
+document.getElementById('move').addEventListener('touchend', () => {
+    touchMove.active = false;
+    moveDirection = {x: 0, y: 0};
+});
+
+['rotateLeft', 'rotateRight', 'shoot', 'sit', 'jump'].forEach(id => {
+    document.getElementById(id).addEventListener('touchstart', () => toggleButton(id));
+    document.getElementById(id).addEventListener('touchend', () => {
+        if (id === 'shoot') isShooting = false;
+    });
+});
+
+// Mouse events for PC testing
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) isShooting = true;
+});
+canvas.addEventListener('mouseup', (e) => {
+    if (e.button === 0) isShooting = false;
+});
+canvas.addEventListener('mousemove', (e) => {
+    if (touchMove.active) {
+        moveDirection.x = e.clientX - touchMove.startX;
+        moveDirection.y = e.clientY - touchMove.startY;
+        touchMove.startX = e.clientX;
+        touchMove.startY = e.clientY;
+    }
+});
+
+function toggleButton(id) {
+    switch(id) {
+        case 'rotateLeft': rotateLeft = !rotateLeft; break;
+        case 'rotateRight': rotateRight = !rotateRight; break;
+        case 'shoot': isShooting = true; break;
+        case 'sit': player.sitting = !player.sitting; break;
+        // Add jump logic if needed
+    }
+}
+
+function drawPlayer() {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+    ctx.beginPath();
+    ctx.arc(0, 0, player.radius, 0, Math.PI * 2); // Head
+    ctx.fillStyle = 'blue';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.rect(-player.radius / 2, player.radius, player.radius, player.radius * 2); // Body
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawEnemy() {
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'red';
+    ctx.fill();
+}
+
+function drawBullets() {
+    ctx.fillStyle = 'black';
+    for(let bullet of bullets) {
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function update() {
+    // Player movement
+    player.x += moveDirection.x * 0.1;
+    player.y += moveDirection.y * 0.1;
+    
+    // Rotation
+    if (rotateLeft) player.angle -= Math.PI / 4; // 45 degrees
+    if (rotateRight) player.angle += Math.PI / 4;
+    
+    // Shooting
+    if (isShooting) {
+        bullets.push({x: player.x, y: player.y, vx: Math.cos(player.angle) * 5, vy: Math.sin(player.angle) * 5});
+    }
+
+    // Enemy shooting
+    if (Date.now() % 32 === 0) { // Roughly every 2 seconds with 16ms frame rate
+        let angleToPlayer = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        bullets.push({x: enemy.x, y: enemy.y, vx: Math.cos(angleToPlayer) * 2, vy: Math.sin(angleToPlayer) * 2, enemy: true});
+    }
+
+    // Update and check collisions
+    bullets = bullets.filter(bullet => {
+        bullet.x += bullet.vx;
+        bullet.y += bullet.vy;
+        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) return false;
+        
+        // Collision with player or enemy
+        let target = bullet.enemy ? player : enemy;
+        if (Math.hypot(bullet.x - target.x, bullet.y - target.y) <= target.radius) {
+            if (bullet.enemy) player.deaths++;
+            else player.kills++;
+            target.x = Math.random() * canvas.width;
+            target.y = Math.random() * canvas.height;
+            return false;
+        }
+        return true;
+    });
+
+    // Clear and redraw
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPlayer();
+    drawEnemy();
+    drawBullets();
+}
+
+setInterval(update, 16); // Approximately 60 FPS
+</script>
+</body>
+</html>
