@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Widget</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: 'Arial', sans-serif;
-            background: url('https://as2.ftcdn.net/v2/jpg/03/85/33/67/1000_F_385336747_lCcNeRpqrhmwr3TiToK4DokmwljzEY1q.jpg') no-repeat center center fixed;
+            background: url('https://static.vecteezy.com/system/resources/previews/007/139/902/non_2x/weather-conditions-icon-set-on-dark-blue-background-best-for-animation-app-design-and-print-editable-vector.jpg') no-repeat center center fixed;
             background-size: cover;
-            color: black;
+            color: #006400;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             text-align: center;
+
         }
+
 
         .container {
             width: 80%;
@@ -27,6 +30,15 @@
         h1 {
             font-size: 3rem;
             margin-bottom: 10px;
+        }
+
+        h1,
+        h2,
+        p {
+            color: #00008B;
+            background-color: rgba(255, 255, 224, 0.7);
+            padding: 5px;
+            border-radius: 4px;
         }
 
         #instruction {
@@ -103,11 +115,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Weather Widget</h1>
         <p id="instruction">Click on a city on the map below to view its weather details.</p>
-        
+
         <div id="map"></div>
 
         <button id="toggle-map-btn" class="toggle-button">Show Map</button>
@@ -137,7 +150,7 @@
             }).addTo(map);
 
             // Click event on the map to select a city
-            map.on('click', function(e) {
+            map.on('click', function (e) {
                 var lat = e.latlng.lat;
                 var lon = e.latlng.lng;
                 getWeather(lat, lon);
@@ -221,4 +234,5 @@
         window.onload = initMap;
     </script>
 </body>
+
 </html>

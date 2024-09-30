@@ -72,7 +72,7 @@ button:hover {
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
 // Assuming you have an OpenWeatherMap API key
-const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+const API_KEY = '20e904f844d8ad0f1c0dd829a17fd27f';
 let map;
 let currentCity;
 
@@ -89,7 +89,9 @@ function initMap() {
 }
 
 function fetchWeather(city) {
+          
     fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`)
+
     .then(response => response.json())
     .then(data => {
         document.getElementById('city-name').textContent = data.name;
